@@ -1,11 +1,14 @@
 #![allow(non_snake_case)]
-
 use dioxus::prelude::*;
+
+use components::nav::Nav;
 use tracing::Level;
 
-#[derive(Clone, Routable, Debug, PartialEq)]
+mod api;
+mod components;
 
-enum Route {
+#[derive(Clone, Routable, Debug, PartialEq)]
+pub enum Route {
     #[layout(Nav)]
     #[route("/")]
     Home {},
@@ -13,11 +16,13 @@ enum Route {
     Blog { id: i32 },
     #[route("/settings")]
     Settings {},
+    #[end_layout]
+    #[route("/:..route")]
+    PageNotFound { route: Vec<String> },
 }
 
 fn main() {
     // Init logger
-
     dioxus_logger::init(Level::INFO).expect("failed to init logger");
 
     dioxus::launch(App);
@@ -27,11 +32,9 @@ fn main() {
 fn App() -> Element {
     rsx! {
         div {
-            "style": "display:flex;   height:100%;",
-
+            "style": "display:flex; height:100%;",
             Router::<Route> {}
         }
-
     }
 }
 
@@ -45,77 +48,35 @@ fn Blog(id: i32) -> Element {
 
 #[component]
 fn Home() -> Element {
+    let mut count = use_signal(|| 0);
+
     rsx! {
-        Link { to: Route::Blog {id:52}, "Blog" }
-
-        div {
-
-
-          p{
-            "hi"
-          }
-
+        Link {
+            to: Route::Blog {
+                id: count()
+            },
+            "Go to blog"
         }
-
+        div {
+            h1 { "High-Five counter: {count}" }
+            button { onclick: move |_| count += 1, "Up high!" }
+            button { onclick: move |_| count -= 1, "Down low!" }
+        }
     }
 }
 
 #[component]
-fn Nav() -> Element {
-    let nav = navigator();
-    let handle_click = move |event: MouseEvent| {
-        nav.push(Route::Home {});
-    };
+fn Settings() -> Element {
     rsx! {
-
-
-
-
-        nav {
-            "style": "display:flex; flex-direction:column; height:100%; background-color:coral; ",
-
-
-
-
-       a{
-           "style": "width:50px; height:50px; background-color:blue;",
-
-          onclick: handle_click,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       }
-
-       a{
-        "style": "width:50px; height:50px; background-color:red;",
-        Link { to: Route::Home {},}
-      Outlet::<Route> {}
-       }
-
-
-        }
+        p { "HELLOW WORLD" }
     }
 }
 
-fn Settings() -> Element {
+#[component]
+fn PageNotFound(route: Vec<String>) -> Element {
     rsx! {
-
-        p{
-            "Hi This Is Settings"
-        }
+        h1 { "Page not found" }
+        p { "We are terribly sorry, but the page you requested doesn't exist." }
+        pre { color: "red", "log:\nattempted to navigate to: {route:?}" }
     }
 }
